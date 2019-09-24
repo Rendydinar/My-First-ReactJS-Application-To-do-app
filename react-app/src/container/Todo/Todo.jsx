@@ -1,12 +1,12 @@
 import React, {Component, Fragment} from 'react';
 import './Todo.css';
 import TodoList from '../../component/TodoList/TodoList';
-import request from 'request'; 
+// import request from 'request'; 
+import API from '../../services';
 
-const serverUrl = 'http://localhost:8080/todo';
 
 class Todo extends Component {
-
+ 
  	state = {
 		todolist: [],
 		formTodo: {
@@ -17,20 +17,19 @@ class Todo extends Component {
 		isUpdate: false
 	};
 
+	// get all todo in  API calling
 	getPostAPI = () => {
-		// request to server 
-		request({url: serverUrl}, (err, httpResponse, body) => {
- 			if(err) console.log(`Error -> : ${err}`);
-			else {
-				body = JSON.parse(body)
-				this.setState({
-					todolist: body.data
-				});				
-			}
+		API.getAllTodo().then(result => {
+			// parse to json format
+ 			result = JSON.parse(result);
+			this.setState({
+				todolist: result.data
+			});
 		});
 	}
 
 	handleTodoChange = (event) => {
+		// handle when todo has change
 		let newTodoForm = {...this.state.formTodo};
 		newTodoForm[event.target.name] = event.target.value;
 
@@ -40,51 +39,42 @@ class Todo extends Component {
 	}
 
 	postTodo = () => {
-		console.log(this.state.formTodo);
-		request.post({url: 'http://localhost:8080/todo', form: this.state.formTodo}, (err, httpResponse, body) =>{
-			console.log(httpResponse);
-			if(err) console.log(`Error -> : ${err}`);
-			else {
-				this.getPostAPI();
-				this.setState({
-					isUpdate: false,
-					formTodo: {
-						_id: 1,
-						title: '',
-						description: ''
-					}
-				});
-			}
- 		});
+		// post todo in  API calling
+		API.postNewTodo(this.state.formTodo).then(result => {
+			this.getPostAPI();
+			// clear the state
+			this.setState({
+				isUpdate: false,
+				formTodo: {
+					_id: 1,
+					title: '',
+					description: ''
+				}
+			});
+		});
 	}
 
 	updateTodo = () => {
-		console.log(this.state.formTodo);
-		request.put({url: serverUrl, form: this.state.formTodo}, (err, httpResponse, body) => {
-			if(err) console.log(`Error -> : ${err}`);
-			else {
-				this.getPostAPI();
-				this.setState({
-					isUpdate: false,
-					formTodo: {
-						id: 1,
-						title: '',
-						description: ''
-					}
-				});
-			}
+		// update todo in  API calling
+		API.updateNewTodo(this.state.formTodo).then(result => {
+			this.getPostAPI();
+			// clear the state
+			this.setState({
+				isUpdate: false,
+				formTodo: {
+					_id: 1,
+					title: '',
+					description: ''
+				}				
+			});
 		});
 	}	
 
 	deleteTodo = (id) => {
-		console.log(`delete ${id}`);
-			const _id = {id: id}
-		console.log(_id);
-
-		 request.delete({url: serverUrl, form:{id: id}}, (err, httpResponse, body) => {
-		 	if(err) console.log(`Error -> : ${err}`);
-		 	else this.getPostAPI();
-		 });
+		// delete todo  in  API calling
+		API.deleteTodo(id).then(result => {
+			this.getPostAPI();
+		});
 	}	
 
 	handleSubmitTodo = () => {
@@ -119,7 +109,7 @@ class Todo extends Component {
 					<textarea name="description" value={this.state.formTodo.description} id="body" cols="30" rows="10" placeholder="Todo description" onChange={this.handleTodoChange}></textarea>						
 					<button className="btn-submit" onClick={this.handleSubmitTodo}>Add Todo</button>
 				</div>
-				{
+				{	
 					this.state.todolist.map(todo => {
 						return	<TodoList key={todo._id} data={todo} delete={this.deleteTodo} update={this.handleUpdateTodo}/>
 					})
